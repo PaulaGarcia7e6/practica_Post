@@ -8,45 +8,96 @@
             <h2>My journal</h2>
         </header>
         <main>
-            <form action="">
-                <textarea name="" id="" cols="30" rows="10" v-model="journalText" maxlength="280" placeholder="New Journal Entry for danielkelly_io"></textarea> <br>
-                <emotes/>
-                <div>
-                    <p>{{ journalText.length }} / 280</p>
+            <form action="" class="">
+                <textarea name="" id="" cols="30" rows="10" v-model="journalText" maxlength="280"
+                    placeholder="New Journal Entry for danielkelly_io" class="notBtn"></textarea> <br>
+                    <div class="d-flex j-c-c">
+                        <emotes @emitCustomEvent="handleCustomEvent" />
+                    </div>
+                    <p class="text-center"> {{ errMSG }} </p>
+                <div class="d-flex j-c-b">
+                    <div>
+                        <p>{{ journalText.length }} / 280</p>
+                    </div>
+                    <button @click="add" class="submit notBtn j-c-b">
+                        <p>Remember</p>
+                        <div class="img-size">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path fill="#333333"
+                                    d="m12 16l4-4l-4-4l-1.4 1.4l1.6 1.6H8v2h4.2l-1.6 1.6L12 16Zm0 6q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22Zm0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20Zm0-8Z" />
+                            </svg>
+                        </div>
+                    </button>
                 </div>
-                <button @click="add" class="submit">
-                    <p>Remember</p>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#333333" d="m12 16l4-4l-4-4l-1.4 1.4l1.6 1.6H8v2h4.2l-1.6 1.6L12 16Zm0 6q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22Zm0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20Zm0-8Z"/></svg>
-                </button>
             </form>
             <hr>
-            <div v-for="post in posts" >
-                <post :journalText="post.journalText" :date="post.journalDate"/>
-            </div>
+            <ol v-for="post in posts">
+                <li>
+                    <post :journalText="post.journalText" :date="post.formatDate" :imgName="post.imgName" />
+                </li>
+            </ol>
         </main>
     </div>
 </template>
 <script lang="ts" setup>
 import emotes from '@/components/emotes.vue';
 import post from '@/components/post.vue';
-import { ref, type Ref } from 'vue';
+import { ref, type Ref, watch } from 'vue';
+
 type Post = {
-    journalDate: Date;
+    formatDate: string;
     journalText: string;
+    imgName: string;
 };
 const posts = ref<Array<Post>>([]);
-let journalDate: Ref<Date> 
 const journalText: Ref<string> = ref("");
-const add = (e:Event) => {
+let imgName:string = ''
+let errMSG: Ref<string> = ref('')
+
+const add = (e: Event) => {
+    const journalDate = new Date()
     e.preventDefault();
+    if (!imgName) {
+        // Mostrar mensaje de error o hacer algo para indicar al usuario que debe seleccionar un emote
+        errMSG.value = "please, select a emote for the jornal";
+        return;
+    }
     const post: Post = {
-        journalDate: new Date(),
-        journalText: journalText.value
-  };
-    posts.value.push(post)
+        formatDate: `${diasSemana(new Date().getDay())} ${journalDate.getDate()} at ${journalDate.getHours()}:${journalDate.getMinutes()}`,
+        journalText: journalText.value,
+        imgName: imgName
+    };
+    console.log(post)
+    posts.value.unshift(post)
+    imgName = ''
+    errMSG.value = ''
+    console.log(posts)
 }
-
-
+const handleCustomEvent = (data: string) => {
+    // Manejar los datos emitidos por el componente hijo
+    console.log(data)
+    imgName = data;
+};
+function diasSemana(dia: number) {
+    let nameDay: string = ''
+    switch (dia) {
+        case 0:
+            nameDay = "Sunday";
+        case 1:
+            nameDay = "Monday";
+        case 2:
+            nameDay = "Tuesday";
+        case 3:
+            nameDay = "Wednesday";
+        case 4:
+            nameDay = "Thursday";
+        case 5:
+            nameDay = "Friday";
+        case 6:
+            nameDay = "Saturday";
+    }
+    return nameDay
+}
 </script>
 <style scoped>
 header {
@@ -54,16 +105,35 @@ header {
     align-items: center;
 }
 
+textarea {
+    width: 630px;
+    height: 130px;
+    border-radius: 10px;
+    border: 1px grey solid;
+    padding: 20px;
+}
+
 .bodyJornal {
+    margin: 0 auto;
+    width: 80vh;
     display: grid;
 }
+
 .submit {
     display: flex;
-    background-color:aqua;
+    align-items: center;
+    background-color: aqua;
     height: 3rem;
     width: 10rem;
+    border-radius: 10px;
+    padding: 5px;
 }
-.submit > svg {
+
+.submit>div {
+    width: 2rem;
+}
+
+.submit>div>svg {
     width: 100%;
 }
 </style>
